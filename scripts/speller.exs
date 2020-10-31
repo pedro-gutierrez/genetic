@@ -24,7 +24,6 @@ defmodule Speller do
   end
 end
 
-
 soln = Genetic.run(Speller)
 IO.write("\n")
 IO.inspect(soln)

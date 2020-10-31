@@ -17,7 +17,6 @@ defmodule OneMax do
   def terminate?(population) do
     hd(population).fitness == 42
   end
-
 end
 
 soln = Genetic.run(OneMax)
