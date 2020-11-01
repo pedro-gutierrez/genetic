@@ -19,7 +19,7 @@ defmodule Speller do
   end
 
   @impl true
-  def terminate?(population) do
+  def terminate?(population, termination) do
     hd(population).fitness == 1
   end
 end
