@@ -2,21 +2,20 @@ defmodule Genetic do
   alias Genetic.Types.Chromosome
 
   def run(problem, opts \\ []) do
-    generation = 0
-
     population = initialize(&problem.genotype/0, opts)
 
     population
-    |> evolve(problem, generation, opts)
+    |> evolve(problem, 0, 0, 0, opts)
   end
 
-  def evolve(population, problem, generation, opts \\ []) do
+  def evolve(population, problem, generation, last_max_fitness, temperature, opts \\ []) do
     population = evaluate(population, &problem.fitness_function/1, opts)
     best = hd(population)
 
+    temperature = 0.8 * (temperature + (best.fitness - last_max_fitness))
     IO.write("\rCurrent Best: #{best.fitness}")
 
-    if problem.terminate?(population, generation) do
+    if problem.terminate?(population, generation, temperature) do
       best
     else
       generation = generation + 1
@@ -25,7 +24,7 @@ defmodule Genetic do
       |> select(opts)
       |> crossover(opts)
       |> mutation(opts)
-      |> evolve(problem, generation, opts)
+      |> evolve(problem, generation, best.fitness, temperature, opts)
     end
   end
 
