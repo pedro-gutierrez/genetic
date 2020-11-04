@@ -1,5 +1,6 @@
 defmodule Genetic do
   alias Genetic.Types.Chromosome
+  alias Genetic.Toolbox.Selection
 
   def run(problem, opts \\ []) do
     population = initialize(&problem.genotype/0, opts)
@@ -18,13 +19,12 @@ defmodule Genetic do
     if problem.terminate?(population, generation, temperature) do
       best
     else
-      generation = generation + 1
+      {parents, leftover} = select(population, opts)
+      children = crossover(parents, opts)
 
-      population
-      |> select(opts)
-      |> crossover(opts)
+      (children ++ leftover)
       |> mutation(opts)
-      |> evolve(problem, generation, best.fitness, temperature, opts)
+      |> evolve(problem, generation + 1, best.fitness, temperature, opts)
     end
   end
 
@@ -44,10 +44,28 @@ defmodule Genetic do
     |> Enum.sort_by(fitness_function, &>=/2)
   end
 
-  def select(population, _opts \\ []) do
-    population
-    |> Enum.chunk_every(2)
-    |> Enum.map(&List.to_tuple(&1))
+  def select(population, opts \\ []) do
+    select_fn = Keyword.get(opts, :selection_type, &Selection.natural/2)
+    select_rate = Keyword.get(opts, :selection_rate, 0.8)
+
+    n = round(length(population) * select_rate)
+    n = if rem(n, 2) == 0, do: n, else: n + 1
+
+    parents =
+      select_fn
+      |> apply([population, n])
+
+    leftover =
+      population
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(parents))
+
+    parents =
+      parents
+      |> Enum.chunk_every(2)
+      |> Enum.map(&List.to_tuple(&1))
+
+    {parents, MapSet.to_list(leftover)}
   end
 
   def crossover(population, _opts \\ []) do
